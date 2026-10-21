@@ -19,6 +19,9 @@ class LavaViewModelFactory(
             modelClass.isAssignableFrom(InicioViewModel::class.java) -> {
                 InicioViewModel(repository, preferenciasStore) as T
             }
+            modelClass.isAssignableFrom(NuevoPedidoViewModel::class.java) -> {
+                NuevoPedidoViewModel(repository, preferenciasStore) as T
+            }
             else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
         }
     }

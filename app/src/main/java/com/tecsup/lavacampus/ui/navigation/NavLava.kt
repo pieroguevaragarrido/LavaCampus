@@ -14,12 +14,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.tecsup.lavacampus.ui.estudiante.InicioScreen
 import com.tecsup.lavacampus.ui.estudiante.LoginScreen
+import com.tecsup.lavacampus.ui.estudiante.NuevoPedidoScreen
 import com.tecsup.lavacampus.viewmodel.InicioViewModel
+import com.tecsup.lavacampus.viewmodel.NuevoPedidoViewModel
 import com.tecsup.lavacampus.viewmodel.SesionViewModel
 
 sealed class Destino(val ruta: String) {
     object Login : Destino("login")
     object EstudianteHome : Destino("estudiante_home")
+    object NuevoPedido : Destino("nuevo_pedido")
     object AdminHome : Destino("admin_home")
 }
 
@@ -27,7 +30,8 @@ sealed class Destino(val ruta: String) {
 fun NavLava(
     navController: NavHostController = rememberNavController(),
     sesionViewModel: SesionViewModel,
-    inicioViewModel: InicioViewModel
+    inicioViewModel: InicioViewModel,
+    nuevoPedidoViewModel: NuevoPedidoViewModel
 ) {
     NavHost(
         navController = navController,
@@ -48,10 +52,18 @@ fun NavLava(
         composable(Destino.EstudianteHome.ruta) {
             InicioScreen(
                 inicioViewModel = inicioViewModel,
-                onNuevoPedido = { },
+                onNuevoPedido = { navController.navigate(Destino.NuevoPedido.ruta) },
                 onVerPedidos = { },
                 onVerTarifas = { },
                 onVerDetallePedido = { }
+            )
+        }
+
+        composable(Destino.NuevoPedido.ruta) {
+            NuevoPedidoScreen(
+                nuevoPedidoViewModel = nuevoPedidoViewModel,
+                onVolver = { navController.popBackStack() },
+                onPedidoCreado = { navController.popBackStack() }
             )
         }
 
