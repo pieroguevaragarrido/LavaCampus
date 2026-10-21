@@ -60,7 +60,7 @@ fun InicioScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Hola, ${nombre ?: "Estudiante"}",
+                            text = "Hola, ${nombre ?: "Ana"}",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A)
@@ -89,7 +89,7 @@ fun InicioScreen(
                 }
             }
 
-            // Tarjeta de Pedido Activo con Seguimiento
+            // Tarjeta de Pedido Activo
             item {
                 Card(
                     shape = RoundedCornerShape(20.dp),
@@ -137,7 +137,7 @@ fun InicioScreen(
 
                             Text(
                                 text = if (pedido.estado == EstadoPedido.LISTO.name)
-                                    "Recógelo en el casillero ${pedido.casillero ?: "C-01"}"
+                                    "Recógelo en el casillero ${pedido.casillero ?: "C-07"}"
                                 else
                                     "Entrega estimada: ${pedido.fechaEntrega}",
                                 color = Color.White.copy(alpha = 0.9f),
@@ -146,7 +146,6 @@ fun InicioScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Stepper Horizontal Simplificado
                             StepperHorizontal(estadoActual = pedido.estado)
                         } else {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -180,7 +179,7 @@ fun InicioScreen(
                 }
             }
 
-            // Accesos Rápidos (Mis Pedidos y Tarifas)
+            // Accesos Rápidos
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -367,7 +366,7 @@ private fun StepperHorizontal(estadoActual: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        estados.forEachIndexed { idx, estado ->
+        estados.forEachIndexed { idx, _ ->
             val completado = idx <= idxActual
             Box(
                 modifier = Modifier
@@ -381,10 +380,11 @@ private fun StepperHorizontal(estadoActual: String) {
                 }
             }
             if (idx < estados.lastIndex) {
-                Divider(
-                    modifier = Modifier.weight(1f),
-                    color = if (idx < idxActual) Color.White else Color.White.copy(alpha = 0.3f),
-                    thickness = 2.dp
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(2.dp)
+                        .background(if (idx < idxActual) Color.White else Color.White.copy(alpha = 0.3f))
                 )
             }
         }

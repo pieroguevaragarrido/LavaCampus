@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.ViewModelProvider
 import com.tecsup.lavacampus.ui.navigation.NavLava
 import com.tecsup.lavacampus.ui.theme.LavaCampusTheme
+import com.tecsup.lavacampus.viewmodel.InicioViewModel
 import com.tecsup.lavacampus.viewmodel.LavaViewModelFactory
 import com.tecsup.lavacampus.viewmodel.SesionViewModel
 
@@ -16,10 +17,14 @@ class MainActivity : ComponentActivity() {
         val app = application as LavaApp
         val factory = LavaViewModelFactory(app.repository, app.preferenciasStore)
         val sesionViewModel = ViewModelProvider(this, factory)[SesionViewModel::class.java]
+        val inicioViewModel = ViewModelProvider(this, factory)[InicioViewModel::class.java]
 
         setContent {
             LavaCampusTheme {
-                NavLava(sesionViewModel = sesionViewModel)
+                NavLava(
+                    sesionViewModel = sesionViewModel,
+                    inicioViewModel = inicioViewModel
+                )
             }
         }
     }

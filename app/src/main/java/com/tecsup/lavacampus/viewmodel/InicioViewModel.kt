@@ -16,27 +16,32 @@ class InicioViewModel(
 ) : ViewModel() {
 
     val nombre: StateFlow<String?> = preferenciasStore.nombre.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), "Estudiante"
+        viewModelScope, SharingStarted.WhileSubscribed(5000), "Ana García"
     )
 
-    private val pedidosUsuario = preferenciasStore.usuarioId
+    private val pedidosUsuario: Flow<List<PedidoConDetalle>> = preferenciasStore.usuarioId
         .flatMapLatest { id ->
-            if (id != null) repository.observarPedidosDeUsuario(id) else flowOf(emptyList())
+            if (id != null) {
+                repository.observarPedidosDeUsuario(id)
+            } else {
+                flowOf(emptyList())
+            }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val pedidoActivo: StateFlow<PedidoConDetalle?> = pedidosUsuario
         .map { lista ->
             lista.firstOrNull { p ->
-                val estado = p.pedido.estado
-                estado == EstadoPedido.RECIBIDO.name ||
-                        estado == EstadoPedido.EN_PROCESO.name ||
-                        estado == EstadoPedido.LISTO.name
+                val est = p.pedido.estado
+                est == EstadoPedido.RECIBIDO.name ||
+                        est == EstadoPedido.EN_PROCESO.name ||
+                        est == EstadoPedido.LISTO.name
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val recientes: StateFlow<List<PedidoConDetalle>> = pedidosUsuario
-        .map { lista -> lista.take(2) }
+        .map { lista ->
+            lista.take(2)
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

@@ -14,20 +14,22 @@ interface UsuarioDao {
     suspend fun contar(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarTodos(lista: List<Usuario>)
+    suspend fun insertar(usuario: Usuario): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertarTodos(usuarios: List<Usuario>)
 
     @Query("""
-        SELECT 
-            u.id AS id,
-            u.nombre AS nombre,
-            u.codigo AS codigo,
-            COUNT(CASE WHEN p.estado != 'CANCELADO' THEN p.id END) AS totalPedidos,
-            COALESCE(SUM(CASE WHEN p.pagado = 1 THEN p.total ELSE 0.0 END), 0.0) AS totalGastado
+        SELECT u.id AS id, 
+               u.nombre AS nombre, 
+               u.codigo AS codigo, 
+               u.correo AS correo,
+               COUNT(p.id) AS totalPedidos,
+               COALESCE(SUM(CASE WHEN p.pagado = 1 THEN p.total ELSE 0.0 END), 0.0) AS totalGastado
         FROM usuarios u
-        LEFT JOIN pedidos p ON u.id = p.usuarioId
+        LEFT JOIN pedidos p ON u.id = p.usuarioId AND p.estado != 'CANCELADO'
         WHERE u.rol = 'CLIENTE'
         GROUP BY u.id
-        ORDER BY u.nombre
     """)
     fun observarClientes(): Flow<List<ClienteResumen>>
 }
