@@ -13,8 +13,8 @@ class LavaViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
-            modelClass.isAssignableFrom(AuthViewModel::class.java) -> {
-                AuthViewModel(repository, preferenciasStore) as T
+            modelClass.isAssignableFrom(SesionViewModel::class.java) -> {
+                SesionViewModel(repository, preferenciasStore) as T
             }
             modelClass.isAssignableFrom(ServiciosViewModel::class.java) -> {
                 ServiciosViewModel(repository) as T
