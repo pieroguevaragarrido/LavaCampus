@@ -16,6 +16,9 @@ class LavaViewModelFactory(
             modelClass.isAssignableFrom(SesionViewModel::class.java) -> {
                 SesionViewModel(repository, preferenciasStore) as T
             }
+            modelClass.isAssignableFrom(InicioViewModel::class.java) -> {
+                InicioViewModel(repository, preferenciasStore) as T
+            }
             modelClass.isAssignableFrom(ServiciosViewModel::class.java) -> {
                 ServiciosViewModel(repository) as T
             }
