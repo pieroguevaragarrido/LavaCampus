@@ -7,19 +7,14 @@ import com.tecsup.lavacampus.model.*
 import kotlinx.coroutines.flow.Flow
 
 interface LavaRepository {
-    // Usuario
     suspend fun login(correo: String, clave: String): Usuario?
     fun observarClientes(): Flow<List<ClienteResumen>>
 
-    // Servicios
     fun observarServicios(): Flow<List<Servicio>>
     fun observarServiciosActivos(): Flow<List<Servicio>>
+    suspend fun cambiarEstadoServicio(id: Int, activo: Boolean)
     suspend fun guardarServicio(s: Servicio)
-    suspend fun eliminarServicio(s: Servicio)
-    suspend fun cambiarActivo(id: Int, activo: Boolean)
-    suspend fun servicioTieneDetalles(id: Int): Boolean
 
-    // Pedidos
     suspend fun crearPedido(
         usuarioId: Int,
         lineas: List<LineaPedido>,
@@ -35,7 +30,6 @@ interface LavaRepository {
     suspend fun marcarPagado(id: Int, pagado: Boolean)
     fun observarCasillerosOcupados(): Flow<List<String>>
 
-    // Panel
     fun observarPedidosDeFecha(fecha: String): Flow<Int>
     fun observarCantidadPorEstado(estado: EstadoPedido): Flow<Int>
     fun observarIngresosDesde(fechaInicio: String): Flow<Double>
