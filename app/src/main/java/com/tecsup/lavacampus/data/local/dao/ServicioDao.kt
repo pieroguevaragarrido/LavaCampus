@@ -6,18 +6,18 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ServicioDao {
-    @Query("SELECT * FROM servicios ORDER BY nombre ASC")
-    fun observarTodos(): Flow<List<Servicio>>
-
-    @Query("SELECT * FROM servicios WHERE activo = 1 ORDER BY nombre ASC")
+    @Query("SELECT * FROM servicios WHERE activo = 1")
     fun observarActivos(): Flow<List<Servicio>>
 
-    @Query("UPDATE servicios SET activo = :activo WHERE id = :id")
-    suspend fun actualizarEstado(id: Int, activo: Boolean)
+    @Query("SELECT * FROM servicios")
+    fun observarTodos(): Flow<List<Servicio>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertar(servicio: Servicio)
+    suspend fun guardar(servicio: Servicio)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarTodos(servicios: List<Servicio>)
+
+    @Query("UPDATE servicios SET activo = :activo WHERE id = :id")
+    suspend fun actualizarEstado(id: Int, activo: Boolean)
 }

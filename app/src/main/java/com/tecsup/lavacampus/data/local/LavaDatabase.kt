@@ -4,14 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.tecsup.lavacampus.data.local.dao.DetalleDao
-import com.tecsup.lavacampus.data.local.dao.PedidoDao
-import com.tecsup.lavacampus.data.local.dao.ServicioDao
-import com.tecsup.lavacampus.data.local.dao.UsuarioDao
-import com.tecsup.lavacampus.data.local.entity.DetallePedido
-import com.tecsup.lavacampus.data.local.entity.Pedido
-import com.tecsup.lavacampus.data.local.entity.Servicio
-import com.tecsup.lavacampus.data.local.entity.Usuario
+import androidx.sqlite.db.SupportSQLiteDatabase
+import com.tecsup.lavacampus.data.local.dao.*
+import com.tecsup.lavacampus.data.local.entity.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Database(
     entities = [Usuario::class, Servicio::class, Pedido::class, DetallePedido::class],
@@ -29,16 +27,38 @@ abstract class LavaDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: LavaDatabase? = null
 
-        fun obtener(context: Context): LavaDatabase {
+        fun obtenerBaseDatos(context: Context): LavaDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     LavaDatabase::class.java,
-                    "lavacampus.db"
+                    "lava_campus.db"
                 )
                     .fallbackToDestructiveMigration()
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            INSTANCE?.let { database ->
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    DatosIniciales.sembrar(database)
+                                }
+                            }
+                        }
+                    })
                     .build()
                 INSTANCE = instance
+
+                // Verificación de seguridad: Si la tabla está vacía, puebla los datos iniciales
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        if (instance.usuarioDao().contar() == 0) {
+                            DatosIniciales.sembrar(instance)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
                 instance
             }
         }

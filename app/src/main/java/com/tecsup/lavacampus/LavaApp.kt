@@ -1,34 +1,26 @@
 package com.tecsup.lavacampus
 
 import android.app.Application
-import com.tecsup.lavacampus.data.local.DatosIniciales
 import com.tecsup.lavacampus.data.local.LavaDatabase
 import com.tecsup.lavacampus.data.prefs.PreferenciasStore
 import com.tecsup.lavacampus.data.repository.LavaRepository
-import com.tecsup.lavacampus.data.repository.LavaRepositoryRoom
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class LavaApp : Application() {
 
-    lateinit var database: LavaDatabase
-        private set
+    val database: LavaDatabase by lazy {
+        LavaDatabase.obtenerBaseDatos(this)
+    }
 
-    lateinit var repository: LavaRepository
-        private set
+    val preferenciasStore: PreferenciasStore by lazy {
+        PreferenciasStore(this)
+    }
 
-    lateinit var preferenciasStore: PreferenciasStore
-        private set
-
-    override fun onCreate() {
-        super.onCreate()
-        database = LavaDatabase.obtener(this)
-        repository = LavaRepositoryRoom(database)
-        preferenciasStore = PreferenciasStore(this)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            DatosIniciales.sembrar(database)
-        }
+    val repository: LavaRepository by lazy {
+        LavaRepository(
+            usuarioDao = database.usuarioDao(),
+            servicioDao = database.servicioDao(),
+            pedidoDao = database.pedidoDao(),
+            detalleDao = database.detalleDao()
+        )
     }
 }

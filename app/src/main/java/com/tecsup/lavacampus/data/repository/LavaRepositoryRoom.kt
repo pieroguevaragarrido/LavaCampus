@@ -1,122 +1,64 @@
 package com.tecsup.lavacampus.data.repository
 
-import com.tecsup.lavacampus.data.local.LavaDatabase
-import com.tecsup.lavacampus.data.local.entity.DetallePedido
-import com.tecsup.lavacampus.data.local.entity.Pedido
-import com.tecsup.lavacampus.data.local.entity.Servicio
-import com.tecsup.lavacampus.data.local.entity.Usuario
+import com.tecsup.lavacampus.data.local.dao.*
+import com.tecsup.lavacampus.data.local.entity.*
 import com.tecsup.lavacampus.data.local.relation.PedidoConDetalle
-import com.tecsup.lavacampus.model.*
+import com.tecsup.lavacampus.model.LineaPedido
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDate
 
-class LavaRepositoryRoom(private val db: LavaDatabase) : LavaRepository {
+class LavaRepositoryRoom(
+    private val usuarioDao: UsuarioDao,
+    private val servicioDao: ServicioDao,
+    private val pedidoDao: PedidoDao,
+    private val detalleDao: DetalleDao
+) {
+    suspend fun login(correo: String, contrasena: String): Usuario? =
+        usuarioDao.login(correo, contrasena)
 
-    private val usuarioDao = db.usuarioDao()
-    private val servicioDao = db.servicioDao()
-    private val pedidoDao = db.pedidoDao()
-    private val detalleDao = db.detalleDao()
+    fun observarServiciosActivos(): Flow<List<Servicio>> = servicioDao.observarActivos()
 
-    // --- Usuario ---
-    override suspend fun login(correo: String, clave: String): Usuario? {
-        return usuarioDao.login(correo, clave)
+    fun observarPedidosDeUsuario(usuarioId: Int): Flow<List<PedidoConDetalle>> =
+        pedidoDao.observarPorUsuario(usuarioId)
+
+    fun observarPedidoPorId(id: Int): Flow<PedidoConDetalle?> =
+        pedidoDao.observarPorId(id)
+
+    suspend fun contarActivos(usuarioId: Int): Int =
+        pedidoDao.contarActivos(usuarioId)
+
+    suspend fun actualizarEstado(pedidoId: Int, nuevoEstado: String) {
+        pedidoDao.actualizarEstado(pedidoId, nuevoEstado)
     }
 
-    override fun observarClientes(): Flow<List<ClienteResumen>> {
-        return usuarioDao.observarClientes()
-    }
-
-    // --- Servicios ---
-    override fun observarServicios(): Flow<List<Servicio>> {
-        return servicioDao.observarTodos()
-    }
-
-    override fun observarServiciosActivos(): Flow<List<Servicio>> {
-        return servicioDao.observarActivos()
-    }
-
-    override suspend fun cambiarEstadoServicio(id: Int, activo: Boolean) {
-        servicioDao.actualizarEstado(id, activo)
-    }
-
-    override suspend fun guardarServicio(s: Servicio) {
-        servicioDao.insertar(s)
-    }
-
-    // --- Pedidos ---
-    override suspend fun crearPedido(
+    suspend fun crearPedido(
         usuarioId: Int,
         lineas: List<LineaPedido>,
         fechaEntrega: String,
         nota: String
     ): Long {
-        val totalCalculado = lineas.sumOf { it.cantidad * it.precioUnitario }
-        val nuevoPedido = Pedido(
+        val total = lineas.sumOf { it.subtotal }
+        val pedido = Pedido(
             usuarioId = usuarioId,
-            fechaRegistro = LocalDate.now().toString(),
+            fechaRegistro = java.time.LocalDate.now().toString(),
             fechaEntrega = fechaEntrega,
-            estado = EstadoPedido.RECIBIDO.name,
-            total = totalCalculado,
+            estado = "RECIBIDO",
+            total = total,
             casillero = null,
             pagado = false,
             nota = nota
         )
-        val pedidoId = pedidoDao.insertar(nuevoPedido)
-        val detalles = lineas.map { linea ->
+        val pedidoId = pedidoDao.insertar(pedido).toInt()
+
+        val detalles = lineas.map { line ->
             DetallePedido(
-                pedidoId = pedidoId.toInt(),
-                servicioId = linea.servicioId,
-                cantidad = linea.cantidad,
-                precioUnitario = linea.precioUnitario,
-                subtotal = linea.cantidad * linea.precioUnitario
+                pedidoId = pedidoId,
+                servicioId = line.servicioId,
+                cantidad = line.cantidad,
+                precioUnitario = line.precioUnitario,
+                subtotal = line.subtotal
             )
         }
         detalleDao.insertarTodos(detalles)
-        return pedidoId
-    }
-
-    override suspend fun contarActivos(usuarioId: Int): Int {
-        return pedidoDao.contarActivos(usuarioId)
-    }
-
-    override fun observarPedidosDeUsuario(usuarioId: Int): Flow<List<PedidoConDetalle>> {
-        return pedidoDao.observarPorUsuario(usuarioId)
-    }
-
-    override fun observarPedidos(): Flow<List<PedidoConDetalle>> {
-        return pedidoDao.observarTodos()
-    }
-
-    override fun observarPedido(id: Int): Flow<PedidoConDetalle?> {
-        return pedidoDao.observarUno(id)
-    }
-
-    override suspend fun cambiarEstado(id: Int, estado: EstadoPedido, casillero: String?) {
-        pedidoDao.actualizarEstado(id, estado.name, casillero)
-    }
-
-    override suspend fun marcarPagado(id: Int, pagado: Boolean) {
-        pedidoDao.actualizarPagado(id, pagado)
-    }
-
-    override fun observarCasillerosOcupados(): Flow<List<String>> {
-        return pedidoDao.observarCasillerosOcupados()
-    }
-
-    // --- Panel ---
-    override fun observarPedidosDeFecha(fecha: String): Flow<Int> {
-        return pedidoDao.contarPorFecha(fecha)
-    }
-
-    override fun observarCantidadPorEstado(estado: EstadoPedido): Flow<Int> {
-        return pedidoDao.contarPorEstado(estado.name)
-    }
-
-    override fun observarIngresosDesde(fechaInicio: String): Flow<Double> {
-        return pedidoDao.ingresosDesde(fechaInicio)
-    }
-
-    override fun observarIngresosPorServicio(fechaInicio: String): Flow<List<IngresoServicio>> {
-        return detalleDao.observarIngresosPorServicio(fechaInicio)
+        return pedidoId.toLong()
     }
 }

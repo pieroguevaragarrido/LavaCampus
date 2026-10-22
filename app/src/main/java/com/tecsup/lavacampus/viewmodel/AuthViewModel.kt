@@ -2,9 +2,12 @@ package com.tecsup.lavacampus.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tecsup.lavacampus.data.local.entity.Usuario
 import com.tecsup.lavacampus.data.prefs.PreferenciasStore
 import com.tecsup.lavacampus.data.repository.LavaRepository
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
@@ -12,56 +15,25 @@ class AuthViewModel(
     private val preferenciasStore: PreferenciasStore
 ) : ViewModel() {
 
-    val usuarioId: StateFlow<Int?> = preferenciasStore.usuarioId.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), null
-    )
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
-    val rol: StateFlow<String?> = preferenciasStore.rol.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), null
-    )
-
-    val nombre: StateFlow<String?> = preferenciasStore.nombre.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), null
-    )
-
-    val correo: StateFlow<String?> = preferenciasStore.correo.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), null
-    )
-
-    val modoOscuro: StateFlow<Boolean> = preferenciasStore.modoOscuro.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), false
-    )
-
-    private val _errorLogin = MutableStateFlow<String?>(null)
-    val errorLogin: StateFlow<String?> = _errorLogin.asStateFlow()
-
-    fun login(correoInput: String, claveInput: String, onSuccess: () -> Unit) {
+    fun iniciarSesion(correo: String, contrasena: String, onSuccess: (String) -> Unit) {
         viewModelScope.launch {
-            _errorLogin.value = null
-            val usuario = repository.login(correoInput.trim(), claveInput.trim())
+            _error.value = null
+            val usuario: Usuario? = repository.login(correo, contrasena)
             if (usuario != null) {
                 preferenciasStore.guardarSesion(
                     id = usuario.id,
+                    usuarioId = usuario.id,
                     nombre = usuario.nombre,
                     correo = usuario.correo,
                     rol = usuario.rol
                 )
-                onSuccess()
+                onSuccess(usuario.rol)
             } else {
-                _errorLogin.value = "Correo o contraseña incorrectos"
+                _error.value = "Correo o contraseña incorrectos"
             }
-        }
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            preferenciasStore.cerrarSesion()
-        }
-    }
-
-    fun toggleModoOscuro(activo: Boolean) {
-        viewModelScope.launch {
-            preferenciasStore.guardarModoOscuro(activo)
         }
     }
 }
