@@ -13,19 +13,28 @@ class LavaViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
-            modelClass.isAssignableFrom(SesionViewModel::class.java) -> {
-                SesionViewModel(repository, preferenciasStore) as T
+            modelClass.isAssignableFrom(AuthViewModel::class.java) -> {
+                AuthViewModel(repository, preferenciasStore) as T
             }
             modelClass.isAssignableFrom(InicioViewModel::class.java) -> {
                 InicioViewModel(repository, preferenciasStore) as T
             }
-            modelClass.isAssignableFrom(NuevoPedidoViewModel::class.java) -> {
-                NuevoPedidoViewModel(repository, preferenciasStore) as T
+            modelClass.isAssignableFrom(MisPedidosViewModel::class.java) -> {
+                MisPedidosViewModel(repository, preferenciasStore) as T
             }
-            modelClass.isAssignableFrom(DetallePedidoViewModel::class.java) -> {
-                DetallePedidoViewModel(repository) as T
+            modelClass.isAssignableFrom(PanelViewModel::class.java) -> {
+                PanelViewModel(repository) as T
             }
-            else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
+            modelClass.isAssignableFrom(PedidosViewModel::class.java) -> {
+                PedidosViewModel(repository, preferenciasStore) as T
+            }
+            modelClass.isAssignableFrom(ServiciosViewModel::class.java) -> {
+                ServiciosViewModel(repository) as T
+            }
+            modelClass.isAssignableFrom(SesionViewModel::class.java) -> {
+                SesionViewModel(repository, preferenciasStore) as T
+            }
+            else -> throw IllegalArgumentException("ViewModel no reconocido: ${modelClass.name}")
         }
     }
 }

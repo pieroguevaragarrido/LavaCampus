@@ -2,10 +2,11 @@ package com.tecsup.lavacampus.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tecsup.lavacampus.data.local.entity.Usuario
 import com.tecsup.lavacampus.data.prefs.PreferenciasStore
 import com.tecsup.lavacampus.data.repository.LavaRepository
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SesionViewModel(
@@ -13,49 +14,34 @@ class SesionViewModel(
     private val preferenciasStore: PreferenciasStore
 ) : ViewModel() {
 
-    private val _usuarioActual = MutableStateFlow<Usuario?>(null)
-    val usuarioActual: StateFlow<Usuario?> = _usuarioActual.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
-
-    val modoOscuro: StateFlow<Boolean> = preferenciasStore.modoOscuro.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), false
+    // Constructor secundario para compatibilidad si solo se pasa PreferenciasStore
+    constructor(preferenciasStore: PreferenciasStore) : this(
+        repository = error("LavaRepository es requerido"),
+        preferenciasStore = preferenciasStore
     )
 
-    fun login(correo: String, clave: String, rolSeleccionado: String, onSuccess: (String) -> Unit) {
-        val correoTrim = correo.trim()
-        val claveTrim = clave.trim()
+    val nombre: StateFlow<String?> = preferenciasStore.nombre
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-        if (correoTrim.isEmpty() || claveTrim.isEmpty()) {
-            _error.value = "Ingresa tu correo y contraseña"
-            return
-        }
+    val correo: StateFlow<String?> = preferenciasStore.correo
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val rol: StateFlow<String?> = preferenciasStore.rol
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val modoOscuro: StateFlow<Boolean> = preferenciasStore.modoOscuro
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun cambiarModoOscuro(activo: Boolean) {
         viewModelScope.launch {
-            _error.value = null
-            val usuario = repository.login(correoTrim, claveTrim)
-            if (usuario == null) {
-                _error.value = "Correo o contraseña incorrectos"
-            } else if (usuario.rol != rolSeleccionado) {
-                _error.value = "Esta cuenta es de tipo ${if (usuario.rol == "CLIENTE") "Estudiante" else "Administrador"}. Selecciona el perfil correcto."
-            } else {
-                _usuarioActual.value = usuario
-                preferenciasStore.guardarSesion(
-                    id = usuario.id,
-                    nombre = usuario.nombre,
-                    correo = usuario.correo,
-                    rol = usuario.rol
-                )
-                onSuccess(usuario.rol)
-            }
+            preferenciasStore.guardarModoOscuro(activo)
         }
     }
 
-    fun logout() {
+    fun cerrarSesion(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            _usuarioActual.value = null
             preferenciasStore.cerrarSesion()
+            onSuccess()
         }
     }
 }

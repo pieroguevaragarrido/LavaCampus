@@ -7,7 +7,7 @@ enum class Rol { CLIENTE, ADMIN }
 enum class Unidad { KG, PRENDA, UNIDAD }
 
 enum class EstadoPedido(val etiqueta: String, val color: Color) {
-    RECIBIDO("Recibido", Color(0xDFD97706)),
+    RECIBIDO("Recibido", Color(0xFFD97706)),
     EN_PROCESO("En proceso", Color(0xFF2563EB)),
     LISTO("Listo", Color(0xFF16A34A)),
     ENTREGADO("Entregado", Color(0xFF475569)),

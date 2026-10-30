@@ -28,6 +28,7 @@ class DetallePedidoViewModel(
 
     fun cancelarPedido(onSuccess: () -> Unit) {
         val id = _pedidoId.value ?: return
+        if (pedidoDetalle.value?.pedido?.estado != EstadoPedido.RECIBIDO.name) return
         viewModelScope.launch {
             repository.actualizarEstado(id, EstadoPedido.CANCELADO.name)
             onSuccess()

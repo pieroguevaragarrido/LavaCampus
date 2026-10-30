@@ -15,246 +15,214 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tecsup.lavacampus.viewmodel.SesionViewModel
+import com.tecsup.lavacampus.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    sesionViewModel: SesionViewModel,
+    viewModel: AuthViewModel,
     onLoginSuccess: (String) -> Unit
 ) {
     var rolSeleccionado by remember { mutableStateOf("CLIENTE") }
     var correo by remember { mutableStateOf("ana@correo.test") }
     var clave by remember { mutableStateOf("1234") }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+    val errorVm by viewModel.error.collectAsState()
 
-    val errorMsg by sesionViewModel.error.collectAsState()
-
-    // Colores del laboratorio: Turquesa #0891B2 (Estudiante) / Violeta #6D28D9 (Admin)
-    val colorTurquesa = Color(0xFF0891B2)
-    val colorVioleta = Color(0xFF6D28D9)
-    val colorPrimario = if (rolSeleccionado == "CLIENTE") colorTurquesa else colorVioleta
+    val esEstudiante = rolSeleccionado == "CLIENTE"
+    val colorPrimario = if (esEstudiante) Color(0xFF0891B2) else Color(0xFF6D28D9)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFAFAFA))
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+            .background(Color.White)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
-        // Encabezado
         Text(
             text = "Bienvenido",
-            style = MaterialTheme.typography.headlineLarge.copy(
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Start
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1E293B),
+            modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
         Text(
             text = "Ingresa para continuar",
-            style = MaterialTheme.typography.bodyLarge.copy(
-                color = Color(0xFF64748B)
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Start
+            fontSize = 15.sp,
+            color = Color.Gray,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp)
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
-
-        // Selector redondeado de Rol (Estudiante / Administrador)
+        // Selector Estudiante / Administrador
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(50.dp))
                 .background(Color(0xFFF1F5F9))
-                .padding(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(4.dp)
         ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (rolSeleccionado == "CLIENTE") colorTurquesa else Color.Transparent)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(if (esEstudiante) Color(0xFF0891B2) else Color.Transparent)
                     .clickable {
                         rolSeleccionado = "CLIENTE"
                         correo = "ana@correo.test"
                         clave = "1234"
-                    },
+                        errorMsg = null
+                        viewModel.limpiarError()
+                    }
+                    .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Estudiante",
-                    color = if (rolSeleccionado == "CLIENTE") Color.White else Color(0xFF64748B),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = if (esEstudiante) Color.White else Color(0xFF64748B)
                 )
             }
 
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (rolSeleccionado == "ADMIN") colorVioleta else Color.Transparent)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(if (!esEstudiante) Color(0xFF6D28D9) else Color.Transparent)
                     .clickable {
                         rolSeleccionado = "ADMIN"
                         correo = "admin@lavacampus.test"
                         clave = "admin"
-                    },
+                        errorMsg = null
+                        viewModel.limpiarError()
+                    }
+                    .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Administrador",
-                    color = if (rolSeleccionado == "ADMIN") Color.White else Color(0xFF64748B),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = if (!esEstudiante) Color.White else Color(0xFF64748B)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Campo Correo con ícono
+        // Campo Correo
         OutlinedTextField(
             value = correo,
             onValueChange = { correo = it },
             label = { Text("Correo") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Outlined.Email,
-                    contentDescription = null,
-                    tint = colorPrimario
-                )
-            },
+            leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = colorPrimario) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             singleLine = true,
-            shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = colorPrimario,
-                unfocusedBorderColor = Color(0xFFCBD5E1)
-            ),
-            modifier = Modifier.fillMaxWidth()
+                focusedLabelColor = colorPrimario
+            )
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Campo Contraseña con ícono
+        // Campo Contraseña
         OutlinedTextField(
             value = clave,
             onValueChange = { clave = it },
             label = { Text("Contraseña") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Outlined.Lock,
-                    contentDescription = null,
-                    tint = colorPrimario
-                )
-            },
+            leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = colorPrimario) },
             visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
             singleLine = true,
-            shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = colorPrimario,
-                unfocusedBorderColor = Color(0xFFCBD5E1)
-            ),
-            modifier = Modifier.fillMaxWidth()
+                focusedLabelColor = colorPrimario
+            )
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "¿Olvidaste tu contraseña?",
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = colorPrimario,
-                fontWeight = FontWeight.SemiBold
-            ),
+            color = colorPrimario,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { },
-            textAlign = TextAlign.End
+                .align(Alignment.End)
+                .clickable { }
         )
 
-        if (errorMsg != null) {
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        (errorMsg ?: errorVm)?.let {
             Text(
-                text = errorMsg!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                text = it,
+                color = Color.Red,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Botón Ingresar
         Button(
             onClick = {
-                sesionViewModel.login(correo, clave, rolSeleccionado, onSuccess = onLoginSuccess)
+                if (correo.isBlank() || clave.isBlank()) {
+                    errorMsg = "Completa todos los campos"
+                } else {
+                    errorMsg = null
+                    viewModel.login(correo, clave, rolSeleccionado, onLoginSuccess)
+                }
             },
-            colors = ButtonDefaults.buttonColors(containerColor = colorPrimario),
-            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = colorPrimario)
         ) {
-            Text(
-                text = "Ingresar",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+            Text("Ingresar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Pie de vista condicional según rol
-        if (rolSeleccionado == "CLIENTE") {
+        if (esEstudiante) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Text("¿No tienes cuenta? ", color = Color.Gray, fontSize = 13.sp)
                 Text(
-                    text = "¿No tienes cuenta? ",
-                    color = Color(0xFF64748B),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "Regístrate",
-                    color = colorTurquesa,
+                    "Regístrate",
+                    color = colorPrimario,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 13.sp,
                     modifier = Modifier.clickable { }
                 )
             }
         } else {
-            Surface(
-                color = Color(0xFFF3E8FF),
-                shape = RoundedCornerShape(16.dp),
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF3E8FF)),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Modo práctica",
                         fontWeight = FontWeight.Bold,
-                        color = colorVioleta,
-                        style = MaterialTheme.typography.bodyMedium
+                        color = Color(0xFF6D28D9),
+                        fontSize = 14.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Puedes cambiar de perfil desde Ajustes para probar ambos roles.",
-                        color = Color(0xFF6B21A8),
-                        style = MaterialTheme.typography.bodySmall
+                        fontSize = 12.sp,
+                        color = Color(0xFF5B21B6)
                     )
                 }
             }

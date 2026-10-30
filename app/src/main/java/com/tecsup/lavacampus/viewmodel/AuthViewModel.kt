@@ -2,7 +2,6 @@ package com.tecsup.lavacampus.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tecsup.lavacampus.data.local.entity.Usuario
 import com.tecsup.lavacampus.data.prefs.PreferenciasStore
 import com.tecsup.lavacampus.data.repository.LavaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,21 +17,45 @@ class AuthViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    fun iniciarSesion(correo: String, contrasena: String, onSuccess: (String) -> Unit) {
+    fun limpiarError() {
+        _error.value = null
+    }
+
+    fun login(
+        correo: String,
+        contrasena: String,
+        rolSeleccionado: String,
+        onSuccess: (String) -> Unit
+    ) {
+        if (correo.isBlank() || contrasena.isBlank()) {
+            _error.value = "Completa todos los campos"
+            return
+        }
         viewModelScope.launch {
             _error.value = null
-            val usuario: Usuario? = repository.login(correo, contrasena)
-            if (usuario != null) {
-                preferenciasStore.guardarSesion(
-                    id = usuario.id,
-                    usuarioId = usuario.id,
-                    nombre = usuario.nombre,
-                    correo = usuario.correo,
-                    rol = usuario.rol
-                )
-                onSuccess(usuario.rol)
-            } else {
-                _error.value = "Correo o contraseña incorrectos"
+            val usuario = repository.login(correo.trim(), contrasena)
+            when {
+                usuario == null -> {
+                    _error.value = "Correo o contraseña incorrectos"
+                }
+                usuario.rol != rolSeleccionado -> {
+                    _error.value = if (rolSeleccionado == "ADMIN") {
+                        "Esta cuenta no es de administrador"
+                    } else {
+                        "Esta cuenta no es de estudiante"
+                    }
+                }
+                else -> {
+                    preferenciasStore.guardarSesion(
+                        id = usuario.id,
+                        usuarioId = usuario.id,
+                        nombre = usuario.nombre,
+                        correo = usuario.correo,
+                        rol = usuario.rol,
+                        codigo = usuario.codigo
+                    )
+                    onSuccess(usuario.rol)
+                }
             }
         }
     }

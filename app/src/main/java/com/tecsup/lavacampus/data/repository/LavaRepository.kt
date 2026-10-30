@@ -1,25 +1,40 @@
 package com.tecsup.lavacampus.data.repository
 
-import com.tecsup.lavacampus.data.local.dao.*
-import com.tecsup.lavacampus.data.local.entity.*
+import androidx.room.withTransaction
+import com.tecsup.lavacampus.data.local.LavaDatabase
+import com.tecsup.lavacampus.data.local.dao.DetalleDao
+import com.tecsup.lavacampus.data.local.dao.PedidoDao
+import com.tecsup.lavacampus.data.local.dao.ServicioDao
+import com.tecsup.lavacampus.data.local.dao.UsuarioDao
+import com.tecsup.lavacampus.data.local.entity.DetallePedido
+import com.tecsup.lavacampus.data.local.entity.Pedido
+import com.tecsup.lavacampus.data.local.entity.Servicio
+import com.tecsup.lavacampus.data.local.entity.Usuario
 import com.tecsup.lavacampus.data.local.relation.PedidoConDetalle
-import com.tecsup.lavacampus.model.*
+import com.tecsup.lavacampus.model.ClienteResumen
+import com.tecsup.lavacampus.model.IngresoServicio
+import com.tecsup.lavacampus.model.LineaPedido
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import java.time.LocalDate
 
 class LavaRepository(
+    private val db: LavaDatabase,
     private val usuarioDao: UsuarioDao,
     private val servicioDao: ServicioDao,
     private val pedidoDao: PedidoDao,
     private val detalleDao: DetalleDao
 ) {
-    // Auth
+    // ---------- Usuarios ----------
     suspend fun login(correo: String, contrasena: String): Usuario? =
         usuarioDao.login(correo, contrasena)
 
-    fun observarClientes(): Flow<List<ClienteResumen>> = flowOf(emptyList())
+    suspend fun obtenerUsuario(id: Int): Usuario? = usuarioDao.obtenerPorId(id)
 
-    // Servicios
+    suspend fun primerUsuarioDeRol(rol: String): Usuario? = usuarioDao.primeroDeRol(rol)
+
+    fun observarClientes(): Flow<List<ClienteResumen>> = usuarioDao.observarClientes()
+
+    // ---------- Servicios ----------
     fun observarServiciosActivos(): Flow<List<Servicio>> = servicioDao.observarActivos()
     fun observarServicios(): Flow<List<Servicio>> = servicioDao.observarTodos()
     fun observarTodosServicios(): Flow<List<Servicio>> = servicioDao.observarTodos()
@@ -28,11 +43,19 @@ class LavaRepository(
         servicioDao.actualizarEstado(servicioId, activo)
     }
 
+    /** id = 0 -> inserta; id > 0 -> actualiza (NO usar REPLACE: borraría la fila y rompería las FK). */
     suspend fun guardarServicio(servicio: Servicio) {
-        servicioDao.guardar(servicio)
+        if (servicio.id == 0) servicioDao.guardar(servicio) else servicioDao.actualizar(servicio)
     }
 
-    // Pedidos
+    suspend fun eliminarServicio(servicio: Servicio) {
+        servicioDao.eliminar(servicio)
+    }
+
+    suspend fun servicioTieneDetalles(servicioId: Int): Boolean =
+        detalleDao.contarPorServicio(servicioId) > 0
+
+    // ---------- Pedidos ----------
     fun observarPedidosDeUsuario(usuarioId: Int): Flow<List<PedidoConDetalle>> =
         pedidoDao.observarPorUsuario(usuarioId)
 
@@ -61,6 +84,7 @@ class LavaRepository(
         pedidoDao.actualizarEstado(pedidoId, nuevoEstado)
     }
 
+    /** Guarda el estado (y el casillero si viene). Las reglas viven en el ViewModel. */
     suspend fun cambiarEstado(pedidoId: Int, nuevoEstado: Any, casillero: String? = null) {
         val estadoStr = if (nuevoEstado is Enum<*>) nuevoEstado.name else nuevoEstado.toString()
         pedidoDao.cambiarEstadoYCasillero(pedidoId, estadoStr, casillero)
@@ -78,7 +102,7 @@ class LavaRepository(
         pedidoDao.marcarPagado(pedidoId, pagado)
     }
 
-    // Panel / Dashboard Admin
+    // ---------- Panel ----------
     fun observarPedidosDeFecha(fecha: String): Flow<Int> =
         pedidoDao.observarPedidosDeFecha(fecha)
 
@@ -91,19 +115,19 @@ class LavaRepository(
         pedidoDao.observarIngresosDesde(fecha)
 
     fun observarIngresosPorServicio(fecha: String): Flow<List<IngresoServicio>> =
-        flowOf(emptyList())
+        detalleDao.observarIngresosPorServicio(fecha)
 
-    // Crear Pedido
+    // ---------- Crear pedido (UNA transacción) ----------
     suspend fun crearPedido(
         usuarioId: Int,
         lineas: List<LineaPedido>,
         fechaEntrega: String,
         nota: String
-    ): Long {
+    ): Long = db.withTransaction {
         val total = lineas.sumOf { it.subtotal }
         val pedido = Pedido(
             usuarioId = usuarioId,
-            fechaRegistro = java.time.LocalDate.now().toString(),
+            fechaRegistro = LocalDate.now().toString(),
             fechaEntrega = fechaEntrega,
             estado = "RECIBIDO",
             total = total,
@@ -113,16 +137,16 @@ class LavaRepository(
         )
         val pedidoId = pedidoDao.insertar(pedido).toInt()
 
-        val detalles = lineas.map { line ->
+        val detalles = lineas.map { linea ->
             DetallePedido(
                 pedidoId = pedidoId,
-                servicioId = line.servicioId,
-                cantidad = line.cantidad,
-                precioUnitario = line.precioUnitario,
-                subtotal = line.subtotal
+                servicioId = linea.servicioId,
+                cantidad = linea.cantidad,
+                precioUnitario = linea.precioUnitario,
+                subtotal = linea.subtotal
             )
         }
         detalleDao.insertarTodos(detalles)
-        return pedidoId.toLong()
+        pedidoId.toLong()
     }
 }

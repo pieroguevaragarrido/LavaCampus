@@ -19,6 +19,10 @@ class InicioViewModel(
         viewModelScope, SharingStarted.WhileSubscribed(5000), "Ana García"
     )
 
+    val codigo: StateFlow<String?> = preferenciasStore.codigo.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), null
+    )
+
     private val pedidosUsuario: Flow<List<PedidoConDetalle>> = preferenciasStore.usuarioId
         .flatMapLatest { id ->
             if (id != null) {

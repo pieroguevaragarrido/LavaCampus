@@ -17,6 +17,7 @@ class LavaApp : Application() {
 
     val repository: LavaRepository by lazy {
         LavaRepository(
+            db = database,
             usuarioDao = database.usuarioDao(),
             servicioDao = database.servicioDao(),
             pedidoDao = database.pedidoDao(),

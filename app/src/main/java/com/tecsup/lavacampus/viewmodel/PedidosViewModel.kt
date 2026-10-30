@@ -5,52 +5,33 @@ import androidx.lifecycle.viewModelScope
 import com.tecsup.lavacampus.data.local.relation.PedidoConDetalle
 import com.tecsup.lavacampus.data.prefs.PreferenciasStore
 import com.tecsup.lavacampus.data.repository.LavaRepository
-import com.tecsup.lavacampus.model.EstadoPedido
-import com.tecsup.lavacampus.model.LineaPedido
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class PedidosViewModel(
     private val repository: LavaRepository,
-    private val preferenciasStore: PreferenciasStore
+    private val preferenciasStore: PreferenciasStore? = null
 ) : ViewModel() {
 
-    val pedidosTodos: StateFlow<List<PedidoConDetalle>> = repository.observarPedidos()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    constructor(repository: LavaRepository) : this(repository, null)
 
-    val pedidosUsuario: StateFlow<List<PedidoConDetalle>> = preferenciasStore.usuarioId
-        .flatMapLatest { id ->
-            if (id != null) repository.observarPedidosDeUsuario(id) else flowOf(emptyList())
-        }
+    val pedidos: StateFlow<List<PedidoConDetalle>> = repository.observarTodosPedidos()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val casillerosOcupados: StateFlow<List<String>> = repository.observarCasillerosOcupados()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun crearPedido(
-        usuarioId: Int,
-        lineas: List<LineaPedido>,
-        fechaEntrega: String,
-        nota: String,
-        onSuccess: () -> Unit
-    ) {
+    fun cambiarEstado(pedidoId: Int, nuevoEstado: Any, casillero: String? = null) {
         viewModelScope.launch {
-            repository.crearPedido(usuarioId, lineas, fechaEntrega, nota)
-            onSuccess()
+            repository.cambiarEstado(pedidoId, nuevoEstado, casillero)
         }
     }
 
-    fun cambiarEstado(id: Int, estado: EstadoPedido, casillero: String?) {
+    fun marcarPagado(pedidoId: Int, pagado: Boolean = true) {
         viewModelScope.launch {
-            repository.cambiarEstado(id, estado, casillero)
-        }
-    }
-
-    fun marcarPagado(id: Int, pagado: Boolean) {
-        viewModelScope.launch {
-            repository.marcarPagado(id, pagado)
+            repository.marcarPagado(pedidoId, pagado)
         }
     }
 }

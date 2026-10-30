@@ -33,6 +33,7 @@ fun InicioScreen(
     onVerDetallePedido: (Int) -> Unit
 ) {
     val nombre by inicioViewModel.nombre.collectAsState()
+    val codigo by inicioViewModel.codigo.collectAsState()
     val pedidoActivo by inicioViewModel.pedidoActivo.collectAsState()
     val recientes by inicioViewModel.recientes.collectAsState()
 
@@ -66,7 +67,7 @@ fun InicioScreen(
                             color = Color(0xFF0F172A)
                         )
                         Text(
-                            text = "U202310234 · Tecsup",
+                            text = "${codigo ?: ""} · Tecsup",
                             fontSize = 14.sp,
                             color = Color(0xFF64748B)
                         )

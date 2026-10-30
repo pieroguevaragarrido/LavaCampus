@@ -1,6 +1,10 @@
 package com.tecsup.lavacampus.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
 import com.tecsup.lavacampus.data.local.entity.Pedido
 import com.tecsup.lavacampus.data.local.relation.PedidoConDetalle
 import kotlinx.coroutines.flow.Flow
@@ -30,19 +34,22 @@ interface PedidoDao {
     @Query("UPDATE pedidos SET pagado = :pagado WHERE id = :id")
     suspend fun marcarPagado(id: Int, pagado: Boolean)
 
-    @Query("SELECT DISTINCT casillero FROM pedidos WHERE casillero IS NOT NULL AND estado IN ('RECIBIDO', 'EN_PROCESO', 'LISTO')")
+    // Solo los casilleros de pedidos LISTO cuentan como ocupados
+    @Query("SELECT DISTINCT casillero FROM pedidos WHERE casillero IS NOT NULL AND estado = 'LISTO'")
     fun observarCasillerosOcupados(): Flow<List<String>>
 
     @Transaction
     @Query("SELECT * FROM pedidos ORDER BY id DESC")
     fun observarTodos(): Flow<List<PedidoConDetalle>>
 
-    @Query("SELECT COUNT(*) FROM pedidos WHERE fechaRegistro = :fecha")
+    // Pedidos de hoy SIN cancelados
+    @Query("SELECT COUNT(*) FROM pedidos WHERE fechaRegistro = :fecha AND estado != 'CANCELADO'")
     fun observarPedidosDeFecha(fecha: String): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM pedidos WHERE estado = :estado")
     fun observarCantidadPorEstado(estado: String): Flow<Int>
 
-    @Query("SELECT COALESCE(SUM(total), 0.0) FROM pedidos WHERE fechaRegistro >= :fecha AND estado != 'CANCELADO'")
+    // Ingresos = suma del total de pedidos PAGADOS desde la fecha indicada
+    @Query("SELECT COALESCE(SUM(total), 0.0) FROM pedidos WHERE pagado = 1 AND estado != 'CANCELADO' AND fechaRegistro >= :fecha")
     fun observarIngresosDesde(fecha: String): Flow<Double>
 }

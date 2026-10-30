@@ -1,100 +1,135 @@
 package com.tecsup.lavacampus.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.navigation.NavHostController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.tecsup.lavacampus.data.prefs.PreferenciasStore
+import com.tecsup.lavacampus.data.repository.LavaRepository
+import com.tecsup.lavacampus.ui.administrador.PanelScreen
 import com.tecsup.lavacampus.ui.estudiante.DetallePedidoScreen
 import com.tecsup.lavacampus.ui.estudiante.InicioScreen
 import com.tecsup.lavacampus.ui.estudiante.LoginScreen
+import com.tecsup.lavacampus.ui.estudiante.MisPedidosScreen
 import com.tecsup.lavacampus.ui.estudiante.NuevoPedidoScreen
+import com.tecsup.lavacampus.ui.estudiante.SesionScreen
+import com.tecsup.lavacampus.ui.estudiante.TarifasScreen
+import com.tecsup.lavacampus.viewmodel.AuthViewModel
 import com.tecsup.lavacampus.viewmodel.DetallePedidoViewModel
 import com.tecsup.lavacampus.viewmodel.InicioViewModel
+import com.tecsup.lavacampus.viewmodel.LavaViewModelFactory
+import com.tecsup.lavacampus.viewmodel.MisPedidosViewModel
 import com.tecsup.lavacampus.viewmodel.NuevoPedidoViewModel
+import com.tecsup.lavacampus.viewmodel.PanelViewModel
 import com.tecsup.lavacampus.viewmodel.SesionViewModel
-
-sealed class Destino(val ruta: String) {
-    object Login : Destino("login")
-    object EstudianteHome : Destino("estudiante_home")
-    object NuevoPedido : Destino("nuevo_pedido")
-    object DetallePedido : Destino("detalle_pedido/{pedidoId}") {
-        fun crearRuta(pedidoId: Int) = "detalle_pedido/$pedidoId"
-    }
-    object AdminHome : Destino("admin_home")
-}
 
 @Composable
 fun NavLava(
-    navController: NavHostController = rememberNavController(),
-    sesionViewModel: SesionViewModel,
-    inicioViewModel: InicioViewModel,
-    nuevoPedidoViewModel: NuevoPedidoViewModel,
-    detalleViewModel: DetallePedidoViewModel
+    repository: LavaRepository,
+    preferenciasStore: PreferenciasStore
 ) {
+    val navController = rememberNavController()
+    val factory = LavaViewModelFactory(repository, preferenciasStore)
+
     NavHost(
         navController = navController,
-        startDestination = Destino.Login.ruta
+        startDestination = Rutas.LOGIN
     ) {
-        composable(Destino.Login.ruta) {
+        // 1. Pantalla de Login
+        composable(Rutas.LOGIN) {
+            val authVm: AuthViewModel = viewModel(factory = factory)
             LoginScreen(
-                sesionViewModel = sesionViewModel,
-                onLoginSuccess = { rol ->
-                    val destino = if (rol == "ADMIN") Destino.AdminHome.ruta else Destino.EstudianteHome.ruta
-                    navController.navigate(destino) {
-                        popUpTo(Destino.Login.ruta) { inclusive = true }
+                viewModel = authVm,
+                onLoginSuccess = {
+                    navController.navigate(Rutas.ADMIN_HOME) {
+                        popUpTo(Rutas.LOGIN) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable(Destino.EstudianteHome.ruta) {
-            InicioScreen(
-                inicioViewModel = inicioViewModel,
-                onNuevoPedido = { navController.navigate(Destino.NuevoPedido.ruta) },
-                onVerPedidos = { },
-                onVerTarifas = { },
-                onVerDetallePedido = { pedidoId ->
-                    navController.navigate(Destino.DetallePedido.crearRuta(pedidoId))
+        // 2. Panel del Administrador
+        composable(Rutas.ADMIN_HOME) {
+            val panelVm: PanelViewModel = viewModel(factory = factory)
+            PanelScreen(
+                vm = panelVm,
+                onVerPedidosListos = {
+                    navController.navigate(Rutas.BANDEJA)
                 }
             )
         }
 
-        composable(Destino.NuevoPedido.ruta) {
-            NuevoPedidoScreen(
-                nuevoPedidoViewModel = nuevoPedidoViewModel,
-                onVolver = { navController.popBackStack() },
-                onPedidoCreado = { navController.popBackStack() }
+        // 3. Inicio del Estudiante
+        composable(Rutas.INICIO) {
+            val inicioVm: InicioViewModel = viewModel(factory = factory)
+            InicioScreen(
+                inicioViewModel = inicioVm,
+                onNuevoPedido = { navController.navigate(Rutas.NUEVO_PEDIDO) },
+                onVerDetallePedido = { idPedido ->
+                    navController.navigate("${Rutas.DETALLE_PEDIDO}/$idPedido")
+                },
+                onVerPedidos = { navController.navigate(Rutas.BANDEJA) },
+                onVerTarifas = { navController.navigate(Rutas.TARIFAS) }
             )
         }
 
-        composable(
-            route = Destino.DetallePedido.ruta,
-            arguments = listOf(navArgument("pedidoId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val pedidoId = backStackEntry.arguments?.getInt("pedidoId") ?: 0
-            DetallePedidoScreen(
-                pedidoId = pedidoId,
-                detalleViewModel = detalleViewModel,
+        // 4. Mis Pedidos / Bandeja
+        composable(Rutas.BANDEJA) {
+            val misPedidosVm: MisPedidosViewModel = viewModel(factory = factory)
+            MisPedidosScreen(
+                viewModel = misPedidosVm,
+                onPedidoClick = { idPedido ->
+                    navController.navigate("${Rutas.DETALLE_PEDIDO}/$idPedido")
+                }
+            )
+        }
+
+        // 5. Nuevo Pedido
+        composable(Rutas.NUEVO_PEDIDO) {
+            val nuevoPedidoVm: NuevoPedidoViewModel = viewModel(factory = factory)
+            NuevoPedidoScreen(
+                nuevoPedidoViewModel = nuevoPedidoVm,
+                onPedidoCreado = { navController.popBackStack() },
                 onVolver = { navController.popBackStack() }
             )
         }
 
-        composable(Destino.AdminHome.ruta) {
-            Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFFAF8FF)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("Panel del Administrador (Paso 11)")
+        // 6. Detalle del Pedido
+        composable(
+            route = "${Rutas.DETALLE_PEDIDO}/{pedidoId}",
+            arguments = listOf(navArgument("pedidoId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val pedidoId = backStackEntry.arguments?.getInt("pedidoId") ?: 0
+            val detalleVm: DetallePedidoViewModel = viewModel(factory = factory)
+            DetallePedidoScreen(
+                pedidoId = pedidoId,
+                detalleViewModel = detalleVm,
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        // 7. Tarifas
+        composable(Rutas.TARIFAS) {
+            val misPedidosVm: MisPedidosViewModel = viewModel(factory = factory)
+            TarifasScreen(
+                viewModel = misPedidosVm
+            )
+        }
+
+        // 8. Sesión / Perfil
+        composable(Rutas.SESION) {
+            val sesionVm: SesionViewModel = viewModel(factory = factory)
+            SesionScreen(
+                viewModel = sesionVm,
+                onCerrarSesion = {
+                    navController.navigate(Rutas.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
-            }
+            )
         }
     }
 }
