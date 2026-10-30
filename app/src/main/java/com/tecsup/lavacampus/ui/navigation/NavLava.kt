@@ -43,11 +43,12 @@ fun NavLava(
             val authVm: AuthViewModel = viewModel(factory = factory)
             LoginScreen(
                 viewModel = authVm,
-                onLoginSuccess = {
-                    navController.navigate(Rutas.ADMIN_HOME) {
+                onLoginSuccess = { rol ->
+                    val destino = if (rol == "ADMIN") Rutas.ADMIN_HOME else Rutas.INICIO
+                    navController.navigate(destino) {
                         popUpTo(Rutas.LOGIN) { inclusive = true }
                     }
-                }
+                },
             )
         }
 
