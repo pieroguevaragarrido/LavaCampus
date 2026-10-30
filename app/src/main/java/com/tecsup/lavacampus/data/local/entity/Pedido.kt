@@ -30,5 +30,6 @@ data class Pedido(
     val casillero: String? = null,
     val pagado: Boolean = false,
     val nota: String = "",
+    val descuento: Double = 0.0,
     val fechaCreacion: Long = System.currentTimeMillis()
 )

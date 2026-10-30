@@ -30,12 +30,27 @@ class NuevoPedidoViewModel(
     val recibiendoPedidos: StateFlow<Boolean> = preferenciasStore.recibirPedidos
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    // Estado reactivo del Total
-    val total: StateFlow<Double> = combine(serviciosActivos, _cantidades) { servicios, cants ->
+    // Estado reactivo de Subtotal, Descuento y Total
+    val subtotal: StateFlow<Double> = combine(serviciosActivos, _cantidades) { servicios, cants ->
         cants.entries.sumOf { (servicioId, cantidad) ->
             val s = servicios.find { it.id == servicioId }
             (s?.precio ?: 0.0) * cantidad
         }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val descuento: StateFlow<Double> = combine(serviciosActivos, _cantidades) { servicios, cants ->
+        cants.entries.sumOf { (servicioId, cantidad) ->
+            val s = servicios.find { it.id == servicioId }
+            if (s != null && s.unidad == "KG" && cantidad > 5.0) {
+                (s.precio * cantidad) * 0.10
+            } else {
+                0.0
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val total: StateFlow<Double> = combine(subtotal, descuento) { sub, desc ->
+        (sub - desc).coerceAtLeast(0.0)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     // Estado reactivo de la Fecha de Entrega (salta domingos)
@@ -117,7 +132,13 @@ class NuevoPedidoViewModel(
 
             if (lineas.isEmpty()) return@launch
 
-            repository.crearPedido(usuarioId, lineas, fechaEntrega.value, _nota.value)
+            repository.crearPedido(
+                usuarioId = usuarioId,
+                lineas = lineas,
+                fechaEntrega = fechaEntrega.value,
+                nota = _nota.value,
+                descuento = descuento.value
+            )
             onSuccess()
         }
     }

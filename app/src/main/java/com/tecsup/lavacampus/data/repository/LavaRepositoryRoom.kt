@@ -125,18 +125,21 @@ class LavaRepositoryRoom(
         usuarioId: Int,
         lineas: List<LineaPedido>,
         fechaEntrega: String,
-        nota: String
+        nota: String,
+        descuento: Double
     ): Long = db.withTransaction {
-        val total = lineas.sumOf { it.subtotal }
+        val subtotalSuma = lineas.sumOf { it.subtotal }
+        val totalFinal = subtotalSuma - descuento
         val pedido = Pedido(
             usuarioId = usuarioId,
             fechaRegistro = LocalDate.now().toString(),
             fechaEntrega = fechaEntrega,
             estado = "RECIBIDO",
-            total = total,
+            total = totalFinal,
             casillero = null,
             pagado = false,
-            nota = nota
+            nota = nota,
+            descuento = descuento
         )
         val pedidoId = pedidoDao.insertar(pedido).toInt()
 

@@ -35,6 +35,8 @@ fun NuevoPedidoScreen(
     val cantidades by nuevoPedidoViewModel.cantidades.collectAsState()
     val nota by nuevoPedidoViewModel.nota.collectAsState()
     val mensajeError by nuevoPedidoViewModel.mensajeError.collectAsState()
+    val subtotal by nuevoPedidoViewModel.subtotal.collectAsState()
+    val descuento by nuevoPedidoViewModel.descuento.collectAsState()
     val total by nuevoPedidoViewModel.total.collectAsState()
     val fechaEntrega by nuevoPedidoViewModel.fechaEntrega.collectAsState()
     val recibiendo by nuevoPedidoViewModel.recibiendoPedidos.collectAsState()
@@ -151,6 +153,47 @@ fun NuevoPedidoScreen(
                                 modifier = Modifier.padding(vertical = 8.dp),
                                 color = colorTurquesa.copy(alpha = 0.3f)
                             )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Subtotal",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF334155)
+                                )
+                                Text(
+                                    text = "S/ ${String.format("%.2f", subtotal)}",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF334155)
+                                )
+                            }
+
+                            if (descuento > 0.0) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Descuento por volumen (10 %)",
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                    Text(
+                                        text = "-S/ ${String.format("%.2f", descuento)}",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
