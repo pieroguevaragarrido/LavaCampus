@@ -45,6 +45,7 @@ fun PanelScreen(
     val pedidosHoy by viewModel.pedidosHoy.collectAsState()
     val enProceso by viewModel.enProceso.collectAsState()
     val porRecoger by viewModel.porRecoger.collectAsState()
+    val atrasados by viewModel.atrasados.collectAsState()
     val ingresosSemana by viewModel.ingresosSemana.collectAsState()
     val porEstado by viewModel.porEstado.collectAsState()
     val porServicio by viewModel.porServicio.collectAsState()
@@ -73,30 +74,43 @@ fun PanelScreen(
             }
         }
 
-        // 3 contadores de color
+        // Contadores de color
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ContadorPanel(
-                    titulo = "Pedidos hoy",
-                    valor = pedidosHoy,
-                    color = EstadoPedido.RECIBIDO.color,
-                    modifier = Modifier.weight(1f)
-                )
-                ContadorPanel(
-                    titulo = "En proceso",
-                    valor = enProceso,
-                    color = EstadoPedido.EN_PROCESO.color,
-                    modifier = Modifier.weight(1f)
-                )
-                ContadorPanel(
-                    titulo = "Por recoger",
-                    valor = porRecoger,
-                    color = EstadoPedido.LISTO.color,
-                    modifier = Modifier.weight(1f)
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ContadorPanel(
+                        titulo = "Pedidos hoy",
+                        valor = pedidosHoy,
+                        color = EstadoPedido.RECIBIDO.color,
+                        modifier = Modifier.weight(1f)
+                    )
+                    ContadorPanel(
+                        titulo = "En proceso",
+                        valor = enProceso,
+                        color = EstadoPedido.EN_PROCESO.color,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ContadorPanel(
+                        titulo = "Por recoger",
+                        valor = porRecoger,
+                        color = EstadoPedido.LISTO.color,
+                        modifier = Modifier.weight(1f)
+                    )
+                    ContadorPanel(
+                        titulo = "Atrasados",
+                        valor = atrasados,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 

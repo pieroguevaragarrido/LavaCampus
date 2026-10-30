@@ -242,25 +242,45 @@ fun DetallePedidoScreen(
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFCFFAFE)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(20.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Total pagado",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = Color(0xFF0F172A)
-                            )
-                            Text(
-                                text = "S/ ${String.format(Locale.US, "%.2f", pedido.total)}",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 22.sp,
-                                color = colorTurquesa
-                            )
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            if (pedido.descuento > 0.0) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Descuento por volumen",
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                    Text(
+                                        text = "-S/ ${String.format(Locale.US, "%.2f", pedido.descuento)}",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Total pagado",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = Color(0xFF0F172A)
+                                )
+                                Text(
+                                    text = "S/ ${String.format(Locale.US, "%.2f", pedido.total)}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 22.sp,
+                                    color = colorTurquesa
+                                )
+                            }
                         }
                     }
                 }

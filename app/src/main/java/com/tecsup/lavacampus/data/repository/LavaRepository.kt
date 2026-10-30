@@ -39,6 +39,7 @@ interface LavaRepository {
     suspend fun cambiarEstadoPedido(pedidoId: Int, nuevoEstado: String)
     suspend fun actualizarEstadoPedido(pedidoId: Int, nuevoEstado: String)
     suspend fun marcarPagado(pedidoId: Int, pagado: Boolean = true)
+    fun observarIdsAtrasados(hoy: String): Flow<List<Int>>
 
     // Panel
     fun observarPedidosDeFecha(fecha: String): Flow<Int>
@@ -51,6 +52,7 @@ interface LavaRepository {
         usuarioId: Int,
         lineas: List<LineaPedido>,
         fechaEntrega: String,
-        nota: String
+        nota: String,
+        descuento: Double = 0.0
     ): Long
 }

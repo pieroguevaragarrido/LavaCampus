@@ -20,6 +20,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -212,7 +213,8 @@ private fun EstudianteShell(
                     MisPedidosScreen(
                         viewModel = vm,
                         onPedidoClick = { id -> nav.navigate("${Destino.DetallePedido.ruta}/$id") },
-                        onNuevoPedido = { nav.navigate(Destino.NuevoPedido.ruta) }
+                        onNuevoPedido = { nav.navigate(Destino.NuevoPedido.ruta) },
+                        onRepetirPedido = { id -> nav.navigate(Destino.NuevoPedido.repetir(id)) }
                     )
                 }
             }
@@ -233,8 +235,22 @@ private fun EstudianteShell(
                 )
             }
 
-            composable(Destino.NuevoPedido.ruta) {
+            composable(
+                route = "${Destino.NuevoPedido.ruta}?repetir={repetir}",
+                arguments = listOf(
+                    navArgument("repetir") {
+                        type = NavType.IntType
+                        defaultValue = -1
+                    }
+                )
+            ) { entry ->
+                val repetirId = entry.arguments?.getInt("repetir") ?: -1
                 val vm: NuevoPedidoViewModel = viewModel(factory = factory)
+                LaunchedEffect(repetirId) {
+                    if (repetirId != -1) {
+                        vm.cargarDesdePedido(repetirId)
+                    }
+                }
                 PantallaClara {
                     NuevoPedidoScreen(
                         nuevoPedidoViewModel = vm,

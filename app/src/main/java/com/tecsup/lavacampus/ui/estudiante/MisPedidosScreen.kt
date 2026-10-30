@@ -52,7 +52,8 @@ fun EstadoPedidoChipLocal(estado: String) {
 fun MisPedidosScreen(
     viewModel: MisPedidosViewModel,
     onPedidoClick: (Int) -> Unit,
-    onNuevoPedido: () -> Unit = {}
+    onNuevoPedido: () -> Unit = {},
+    onRepetirPedido: (Int) -> Unit = {}
 ) {
     val activos by viewModel.activos.collectAsState()
     val historial by viewModel.historial.collectAsState()
@@ -137,7 +138,8 @@ fun MisPedidosScreen(
                         ItemPedidoEstudiante(
                             pedidoConDetalle = item,
                             onClick = { onPedidoClick(item.pedido.id) },
-                            onCancelar = { viewModel.cancelarPedido(item.pedido.id) }
+                            onCancelar = { viewModel.cancelarPedido(item.pedido.id) },
+                            onRepetir = { onRepetirPedido(item.pedido.id) }
                         )
                     }
                 }
@@ -174,11 +176,13 @@ fun MisPedidosScreen(
 fun ItemPedidoEstudiante(
     pedidoConDetalle: PedidoConDetalle,
     onClick: () -> Unit,
-    onCancelar: () -> Unit
+    onCancelar: () -> Unit,
+    onRepetir: () -> Unit = {}
 ) {
     val p = pedidoConDetalle.pedido
     val esListo = p.estado == EstadoPedido.LISTO.name
     val esRecibido = p.estado == EstadoPedido.RECIBIDO.name
+    val esHistorial = p.estado == EstadoPedido.ENTREGADO.name || p.estado == EstadoPedido.CANCELADO.name
 
     Card(
         modifier = Modifier
@@ -248,6 +252,15 @@ fun ItemPedidoEstudiante(
                         fontSize = 13.sp,
                         modifier = Modifier.clickable { onCancelar() }
                     )
+                } else if (esHistorial) {
+                    Button(
+                        onClick = onRepetir,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0891B2)),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Text("Pedir de nuevo", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

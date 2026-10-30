@@ -1,0 +1,76 @@
+# Prompts utilizados
+
+## Prompt 1 — Pedidos atrasados
+Tarea: pedidos atrasados.
+Un pedido está atrasado si su fechaEntrega es menor que la fecha de hoy (yyyy-MM-dd) y su estado es distinto de ENTREGADO y CANCELADO.
+
+1) En PedidoDao agrega una consulta Flow<List<Int>> con los ids de pedidos atrasados, recibiendo la fecha de hoy como parámetro.
+2) Declara la función en la interface LavaRepository e impleméntala en LavaRepositoryRoom.
+3) En BandejaViewModel expón un StateFlow<Set<Int>> con los ids atrasados (usa LocalDate.now().toString() como hoy).
+4) En PanelViewModel expón un StateFlow<Int> con la cantidad de atrasados.
+5) Vistas: en BandejaScreen (TarjetaBandeja) marca en rojo (borde o texto "Atrasado" con MaterialTheme.colorScheme.error) las tarjetas cuyo id esté en el set. En PanelScreen agrega una tarjeta o contador "Atrasados" que muestre la cantidad.
+6) En DatosIniciales agrega un pedido de ejemplo atrasado y no entregado (por ejemplo EN_PROCESO con fechaEntrega de hace 2 días) sin romper los demás.
+La View solo muestra los valores del ViewModel. Muéstrame solo los archivos que cambian.
+
+**Que genero la IA:**
+PedidoDao: una consulta que devuelve los ids de pedidos atrasados según la fecha de hoy.
+LavaRepository y LavaRepositoryRoom: la función nueva, declarada en la interface e implementada con override.
+BandejaViewModel: un StateFlow<Set<Int>> con los ids atrasados.
+PanelViewModel: un StateFlow<Int> con la cantidad de atrasados.
+BandejaScreen: marca roja (borde o texto "Atrasado") en las tarjetas atrasadas.
+PanelScreen: contador "Atrasados".
+DatosIniciales: un pedido de ejemplo atrasado.
+
+**Respeta MVVM?:**
+Sí: la consulta quedó en el DAO, el repositorio expone la función desde la interface, los ViewModels solo conocen LavaRepository y publican StateFlow, y las pantallas solo leen esos valores sin acceder a datos.
+
+## Prompt 2 — Descuento por volumen
+Tarea: descuento por volumen.
+Si el servicio de lavado por kilo (unidad "KG") supera 5 kg en un pedido, se aplica 10 % de descuento sobre el subtotal de esa línea. El descuento debe verse en el resumen de Nuevo pedido y guardarse en el pedido.
+
+1) Entidad Pedido: agrega el campo descuento: Double = 0.0 y sube la version de @Database en LavaDatabase de 1 a 2 (ya tiene fallbackToDestructiveMigration).
+2) La función crearPedido de LavaRepository (interface) y LavaRepositoryRoom recibe un parámetro descuento: Double. Pedido.total debe guardarse ya con el descuento restado (total = suma de subtotales - descuento) y Pedido.descuento guarda el monto descontado. Mantén todo dentro de la transacción existente.
+3) NuevoPedidoViewModel: calcula descuento (StateFlow<Double>) y el total final (StateFlow<Double>) a partir de las cantidades y los precios actuales; pasa el descuento a crearPedido. Ajusta las firmas de las funciones que cambien.
+4) NuevoPedidoScreen: en el resumen muestra "Subtotal", una línea "Descuento por volumen (10 %)" con el monto en negativo solo si hay descuento, y el "Total" final. El botón de confirmar sigue funcionando igual.
+5) DetallePedidoScreen: si pedido.descuento > 0 muestra la línea de descuento antes del total.
+No cambies las reglas existentes (máximo 3 pedidos activos, fecha de entrega que salta domingos). Muéstrame solo los archivos que cambian.
+
+**Que genero la IA:**
+Pedido (entidad): campo descuento nuevo, y LavaDatabase con la version subida de 1 a 2.
+LavaRepository y LavaRepositoryRoom: crearPedido recibe el descuento y guarda total ya con el descuento restado, dentro de la transacción.
+NuevoPedidoViewModel: StateFlow de descuento y de total final calculados con los precios actuales.
+NuevoPedidoScreen: líneas de subtotal, descuento (solo si aplica) y total.
+DetallePedidoScreen: línea de descuento si es mayor que 0.
+
+**Respeta MVVM?:**
+Sí: el cálculo está en el ViewModel, la persistencia pasa por la interface y LavaRepositoryRoom, la entidad cambió con su versión de base, y la View solo muestra los valores.
+
+## Prompt 3 — Repetir un pedido
+Tarea: repetir un pedido.
+En el historial de Mis pedidos (pedidos ENTREGADO o CANCELADO) agrega un botón "Pedir de nuevo". Al tocarlo se abre Nuevo pedido con las mismas líneas (servicio y cantidad) ya cargadas, usando los precios ACTUALES de los servicios y omitiendo los servicios que hoy estén inactivos.
+
+1) Navegación: Nuevo pedido recibe un argumento opcional repetir (Int, por defecto -1). Ajusta Rutas.kt y NavLava.kt (en el grafo del estudiante) sin romper las llamadas actuales a Nuevo pedido.
+2) NuevoPedidoViewModel: agrega cargarDesdePedido(pedidoId) que lee el pedido con repository.observarPedidoPorId(id).first() y llena el mapa de cantidades solo con los servicios activos. Debe ejecutarse una sola vez al abrir la pantalla.
+3) MisPedidosScreen: botón "Pedir de nuevo" en los ítems del historial que navega pasando el id.
+4) No uses DAO en la View. No agregues funciones nuevas al repositorio si no hacen falta.
+Muéstrame solo los archivos que cambian.
+
+**Que genero la IA:**
+Rutas.kt y NavLava.kt: argumento opcional para abrir Nuevo pedido desde un pedido anterior.
+NuevoPedidoViewModel: función que carga las cantidades de un pedido existente solo con servicios activos.
+MisPedidosScreen: botón "Pedir de nuevo" en los ítems del historial.
+
+**Respeta MVVM?:**
+Sí: la lectura del pedido anterior ocurre en el ViewModel a través del repositorio, y la pantalla solo dispara la acción y muestra el estado.
+
+## Reflexion (5 lineas)
+- Que mejoro la IA y que no?
+  Mejoró la rapidez para armar las consultas, los StateFlow y las pantallas de cada mejora. No mejoró el respeto a las reglas del proyecto sin que yo se las repitiera: hubo que revisar capa por capa.
+- Que error cometio?
+- ¿Qué aprendí sobre MVVM? 
+  Que la View no debe conocer datos y que el ViewModel solo habla con la interface del repositorio; así la IA puede cambiar lógica sin tocar el resto.
+  Que la View no debe conocer datos y que el ViewModel solo habla con la interface del repositorio; así la IA puede cambiar lógica sin tocar el resto.
+- ¿Qué aprendí sobre Room? 
+  Que cambiar una entidad obliga a subir la versión de la base y que las consultas viven en el DAO, no en el ViewModel.
+- ¿Qué aprendí sobre reglas de negocio? 
+  Que reglas como el descuento por volumen o los pedidos atrasados deben calcularse en el ViewModel o en el repositorio y probarse con casos límite (5 kg frente a 6 kg, fecha de hoy frente a ayer).

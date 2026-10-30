@@ -43,6 +43,10 @@ class PanelViewModel(
     val porRecoger: StateFlow<Int> = repository.observarCantidadPorEstado(EstadoPedido.LISTO)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val atrasados: StateFlow<Int> = repository.observarIdsAtrasados(hoy)
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     val ingresosSemana: StateFlow<Double> = repository.observarIngresosDesde(inicioSemana)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
