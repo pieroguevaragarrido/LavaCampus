@@ -27,6 +27,8 @@ class NuevoPedidoViewModel(
 
     private val _mensajeError = MutableStateFlow<String?>(null)
     val mensajeError: StateFlow<String?> = _mensajeError.asStateFlow()
+    val recibiendoPedidos: StateFlow<Boolean> = preferenciasStore.recibirPedidos
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     // Estado reactivo del Total
     val total: StateFlow<Double> = combine(serviciosActivos, _cantidades) { servicios, cants ->
@@ -88,6 +90,10 @@ class NuevoPedidoViewModel(
     fun confirmarPedido(onSuccess: () -> Unit) {
         viewModelScope.launch {
             _mensajeError.value = null
+            if (!preferenciasStore.recibirPedidos.first()) {
+                _mensajeError.value = "La lavandería no está recibiendo pedidos"
+                return@launch
+            }
             val usuarioId = preferenciasStore.usuarioId.first() ?: return@launch
 
             val activos = repository.contarActivos(usuarioId)

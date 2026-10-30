@@ -37,6 +37,7 @@ fun NuevoPedidoScreen(
     val mensajeError by nuevoPedidoViewModel.mensajeError.collectAsState()
     val total by nuevoPedidoViewModel.total.collectAsState()
     val fechaEntrega by nuevoPedidoViewModel.fechaEntrega.collectAsState()
+    val recibiendo by nuevoPedidoViewModel.recibiendoPedidos.collectAsState()
 
     val colorTurquesa = Color(0xFF0891B2)
     val colorFondo = Color(0xFFF0FCFF)
@@ -183,6 +184,16 @@ fun NuevoPedidoScreen(
                 }
             }
 
+            if (!recibiendo) {
+                item {
+                    Text(
+                        text = "La lavandería no está recibiendo pedidos",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
             if (mensajeError != null) {
                 item {
                     Text(
@@ -200,7 +211,7 @@ fun NuevoPedidoScreen(
                     onClick = {
                         nuevoPedidoViewModel.confirmarPedido(onSuccess = onPedidoCreado)
                     },
-                    enabled = total > 0.0,
+                    enabled = total > 0.0 && recibiendo,
                     colors = ButtonDefaults.buttonColors(containerColor = colorTurquesa),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
