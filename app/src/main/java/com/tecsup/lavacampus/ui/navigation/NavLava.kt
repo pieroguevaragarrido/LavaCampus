@@ -55,10 +55,8 @@ fun NavLava(
         composable(Rutas.ADMIN_HOME) {
             val panelVm: PanelViewModel = viewModel(factory = factory)
             PanelScreen(
-                vm = panelVm,
-                onVerPedidosListos = {
-                    navController.navigate(Rutas.BANDEJA)
-                }
+                viewModel = panelVm,
+                onVerListos = { navController.navigate(Rutas.BANDEJA) }
             )
         }
 

@@ -11,98 +11,60 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 
-class PanelViewModel(private val repo: LavaRepository) : ViewModel() {
+class PanelViewModel(
+    private val repository: LavaRepository
+) : ViewModel() {
 
-    private val hoyStr: String
-    private val inicioSemanaStr: String
+    private val hoy: String = LocalDate.now().toString()
 
-    init {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val cal = Calendar.getInstance()
+    // Lunes de esta semana (si hoy es lunes, es hoy; si es domingo, el lunes anterior)
+    private val inicioSemana: String = LocalDate.now()
+        .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        .toString()
 
-        // Fecha actual
-        hoyStr = sdf.format(cal.time)
+    private val paleta = listOf(
+        Color(0xFF6D28D9),
+        Color(0xFF0891B2),
+        Color(0xFFD97706),
+        Color(0xFF16A34A),
+        Color(0xFFDB2777)
+    )
 
-        // Obtener el lunes de la semana actual
-        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-        inicioSemanaStr = sdf.format(cal.time)
-    }
+    val pedidosHoy: StateFlow<Int> = repository.observarPedidosDeFecha(hoy)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    // 1. Pedidos del día de hoy
-    val pedidosHoy: StateFlow<Int> = repo.observarPedidosDeFecha(hoyStr)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0
-        )
+    val enProceso: StateFlow<Int> = repository.observarCantidadPorEstado(EstadoPedido.EN_PROCESO)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    // 2. Pedidos actualmente en proceso
-    val enProceso: StateFlow<Int> = repo.observarCantidadPorEstado(EstadoPedido.EN_PROCESO)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0
-        )
+    val porRecoger: StateFlow<Int> = repository.observarCantidadPorEstado(EstadoPedido.LISTO)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    // 3. Pedidos listos por recoger
-    val porRecoger: StateFlow<Int> = repo.observarCantidadPorEstado(EstadoPedido.LISTO)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0
-        )
+    val ingresosSemana: StateFlow<Double> = repository.observarIngresosDesde(inicioSemana)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
-    // 4. Ingresos de la semana actual
-    val ingresosSemana: StateFlow<Double> = repo.observarIngresosDesde(inicioSemanaStr)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0.0
-        )
-
-    // 5. Gráfico de Dona: Distribución de pedidos por estado
     val porEstado: StateFlow<List<DatoGrafico>> = combine(
-        repo.observarCantidadPorEstado(EstadoPedido.RECIBIDO),
-        repo.observarCantidadPorEstado(EstadoPedido.EN_PROCESO),
-        repo.observarCantidadPorEstado(EstadoPedido.LISTO),
-        repo.observarCantidadPorEstado(EstadoPedido.ENTREGADO)
-    ) { recibido, enProceso, listo, entregado ->
+        repository.observarCantidadPorEstado(EstadoPedido.RECIBIDO),
+        repository.observarCantidadPorEstado(EstadoPedido.EN_PROCESO),
+        repository.observarCantidadPorEstado(EstadoPedido.LISTO),
+        repository.observarCantidadPorEstado(EstadoPedido.ENTREGADO)
+    ) { recibido, proceso, listo, entregado ->
         listOf(
-            DatoGrafico("Recibido", recibido.toFloat(), Color(0xFF0891B2)),
-            DatoGrafico("En Proceso", enProceso.toFloat(), Color(0xFF2563EB)),
-            DatoGrafico("Listo", listo.toFloat(), Color(0xFF16A34A)),
-            DatoGrafico("Entregado", entregado.toFloat(), Color(0xFF6B7280))
+            DatoGrafico(EstadoPedido.RECIBIDO.etiqueta, recibido.toFloat(), EstadoPedido.RECIBIDO.color),
+            DatoGrafico(EstadoPedido.EN_PROCESO.etiqueta, proceso.toFloat(), EstadoPedido.EN_PROCESO.color),
+            DatoGrafico(EstadoPedido.LISTO.etiqueta, listo.toFloat(), EstadoPedido.LISTO.color),
+            DatoGrafico(EstadoPedido.ENTREGADO.etiqueta, entregado.toFloat(), EstadoPedido.ENTREGADO.color)
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // 6. Gráfico de Barras: Ingresos por servicio
-    private val coloresServicio = listOf(
-        Color(0xFF0891B2), // Turquesa
-        Color(0xFF6D28D9), // Violeta
-        Color(0xFFD97706), // Ámbar
-        Color(0xFF16A34A)  // Verde
-    )
-
-    val porServicio: StateFlow<List<DatoGrafico>> = repo.observarIngresosPorServicio(inicioSemanaStr)
-        .map { listaIngresos ->
-            listaIngresos.mapIndexed { index, ingreso ->
-                DatoGrafico(
-                    etiqueta = ingreso.nombre,
-                    valor = ingreso.total.toFloat(),
-                    color = coloresServicio[index % coloresServicio.size]
-                )
+    val porServicio: StateFlow<List<DatoGrafico>> = repository.observarIngresosPorServicio(inicioSemana)
+        .map { lista ->
+            lista.mapIndexed { i, ingreso ->
+                DatoGrafico(ingreso.nombre, ingreso.total.toFloat(), paleta[i % paleta.size])
             }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
