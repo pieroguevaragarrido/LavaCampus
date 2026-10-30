@@ -51,6 +51,8 @@ object DatosIniciales {
             val hoyFecha = LocalDate.now()
             val hoy = hoyFecha.toString()
             val ayer = hoyFecha.minusDays(1).toString()
+            val haceDosDias = hoyFecha.minusDays(2).toString()
+            val haceTresDias = hoyFecha.minusDays(3).toString()
             val lunes = hoyFecha.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString()
             val manana = hoyFecha.plusDays(1).toString()
             val pasado = hoyFecha.plusDays(2).toString()
@@ -107,6 +109,8 @@ object DatosIniciales {
                 listOf(Linea(1, 3.0, 8.0)))
             pedido(2, lunes, lunes, EstadoPedido.ENTREGADO, "C-10", true, "",
                 listOf(Linea(3, 2.0, 12.0), Linea(2, 3.0, 2.5)))
+            pedido(2, haceTresDias, haceDosDias, EstadoPedido.EN_PROCESO, null, false, "Urgente",
+                listOf(Linea(1, 3.0, 8.0)))
 
             // Marta (id 3)
             pedido(3, ayer, manana, EstadoPedido.EN_PROCESO, null, false, "Con suavizante",

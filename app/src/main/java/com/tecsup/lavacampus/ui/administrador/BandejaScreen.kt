@@ -1,5 +1,6 @@
 package com.tecsup.lavacampus.ui.administrador
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +52,7 @@ fun BandejaScreen(
     val pedidos by viewModel.pedidos.collectAsState()
     val filtro by viewModel.filtro.collectAsState()
     val busqueda by viewModel.busqueda.collectAsState()
+    val idsAtrasados by viewModel.idsAtrasados.collectAsState()
 
     Column(
         modifier = Modifier
@@ -111,6 +113,7 @@ fun BandejaScreen(
                 items(pedidos, key = { it.pedido.id }) { item ->
                     TarjetaBandeja(
                         item = item,
+                        esAtrasado = item.pedido.id in idsAtrasados,
                         onAbrir = { onAbrirPedido(item.pedido.id) },
                         onIniciar = { viewModel.iniciar(item) }
                     )
@@ -123,6 +126,7 @@ fun BandejaScreen(
 @Composable
 private fun TarjetaBandeja(
     item: PedidoConDetalle,
+    esAtrasado: Boolean,
     onAbrir: () -> Unit,
     onIniciar: () -> Unit
 ) {
@@ -132,6 +136,7 @@ private fun TarjetaBandeja(
             .fillMaxWidth()
             .clickable { onAbrir() },
         shape = RoundedCornerShape(16.dp),
+        border = if (esAtrasado) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else null,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -141,13 +146,26 @@ private fun TarjetaBandeja(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "${p.id.codigoPedido()} · ${item.usuario.nombre}",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    Text(
+                        text = "${p.id.codigoPedido()} · ${item.usuario.nombre}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (esAtrasado) {
+                        Text(
+                            text = "Atrasado",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
                 EstadoPedidoChipLocal(estado = p.estado)
             }
 

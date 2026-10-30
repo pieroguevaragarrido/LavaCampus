@@ -102,6 +102,9 @@ class LavaRepositoryRoom(
         pedidoDao.marcarPagado(pedidoId, pagado)
     }
 
+    override fun observarIdsAtrasados(hoy: String): Flow<List<Int>> =
+        pedidoDao.observarIdsAtrasados(hoy)
+
     // ---------- Panel ----------
     override fun observarPedidosDeFecha(fecha: String): Flow<Int> =
         pedidoDao.observarPedidosDeFecha(fecha)
