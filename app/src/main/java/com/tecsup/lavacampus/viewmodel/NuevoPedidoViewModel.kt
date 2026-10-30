@@ -77,6 +77,24 @@ class NuevoPedidoViewModel(
         _nota.value = nuevaNota
     }
 
+    private var cargado = false
+
+    fun cargarDesdePedido(pedidoId: Int) {
+        if (cargado || pedidoId == -1) return
+        cargado = true
+        viewModelScope.launch {
+            val item = repository.observarPedidoPorId(pedidoId).first() ?: return@launch
+            val activos = repository.observarServiciosActivos().first()
+            val activosIds = activos.map { it.id }.toSet()
+
+            val mapa = item.detalles
+                .filter { it.detalle.servicioId in activosIds }
+                .associate { it.detalle.servicioId to it.detalle.cantidad }
+
+            _cantidades.value = mapa
+        }
+    }
+
     fun cambiarCantidad(servicio: Servicio, delta: Double) {
         val mapaActual = _cantidades.value.toMutableMap()
         val actual = mapaActual[servicio.id] ?: 0.0

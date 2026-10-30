@@ -8,7 +8,9 @@ sealed class Destino(val ruta: String) {
 
     // Grafo del estudiante
     object EstudianteHome : Destino("estudiante_home")
-    object NuevoPedido : Destino("nuevo_pedido")
+    object NuevoPedido : Destino("nuevo_pedido") {
+        fun repetir(pedidoId: Int) = "nuevo_pedido?repetir=$pedidoId"
+    }
     object MisPedidos : Destino("mis_pedidos")
     object DetallePedido : Destino("detalle_pedido")
     object Tarifas : Destino("tarifas")
