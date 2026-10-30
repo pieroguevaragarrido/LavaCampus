@@ -4,6 +4,7 @@ import android.app.Application
 import com.tecsup.lavacampus.data.local.LavaDatabase
 import com.tecsup.lavacampus.data.prefs.PreferenciasStore
 import com.tecsup.lavacampus.data.repository.LavaRepository
+import com.tecsup.lavacampus.data.repository.LavaRepositoryRoom
 
 class LavaApp : Application() {
 
@@ -16,7 +17,7 @@ class LavaApp : Application() {
     }
 
     val repository: LavaRepository by lazy {
-        LavaRepository(
+        LavaRepositoryRoom(
             db = database,
             usuarioDao = database.usuarioDao(),
             servicioDao = database.servicioDao(),
